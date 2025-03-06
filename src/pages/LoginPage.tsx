@@ -145,10 +145,6 @@ const LoginPage: React.FC = () => {
             </button>
           </div>
           
-          <div className="mt-8 pt-6 border-t border-gray-800 text-center text-sm text-gray-400">
-            <p>This is a demo application. No real authentication is implemented.</p>
-            <p className="mt-1">Use any email and password to log in.</p>
-          </div>
         </div>
       </div>
     </div>
