@@ -115,6 +115,7 @@ export const getPopularMusicVideos = async (maxResults = 20): Promise<SearchResu
         chart: 'mostPopular',
         videoCategoryId: '10', // Music category
         maxResults,
+        regionCode: 'IN',
         key: API_KEY
       }
     });
