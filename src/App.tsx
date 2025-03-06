@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { HashRouter, Routes, Route } from 'react-router-dom';
 import MainLayout from './layouts/MainLayout';
 import HomePage from './pages/HomePage';
 import SearchPage from './pages/SearchPage';
@@ -14,13 +14,12 @@ import { useAuthStore } from './store/authStore';
 function App() {
   const { checkAuth } = useAuthStore();
   
-  // Check for stored auth on app load
   useEffect(() => {
     checkAuth();
   }, [checkAuth]);
 
   return (
-    <BrowserRouter>
+    <HashRouter> {/* Changed from BrowserRouter to HashRouter */}
       <Routes>
         <Route path="/login" element={<LoginPage />} />
         
@@ -34,7 +33,7 @@ function App() {
           <Route path="category/:id" element={<CategoryPage />} />
         </Route>
       </Routes>
-    </BrowserRouter>
+    </HashRouter>
   );
 }
 
