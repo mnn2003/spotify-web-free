@@ -1,413 +1,497 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { 
-  Play, 
-  Pause, 
-  SkipBack, 
-  SkipForward, 
-  Volume2, 
+"use client"
+
+import type React from "react"
+import { useEffect, useRef, useState } from "react"
+import {
+  Play,
+  Pause,
+  SkipBack,
+  SkipForward,
+  Volume2,
   VolumeX,
   Heart,
   Repeat,
   Shuffle,
   ListMusic,
-  Maximize2,
-  Minimize2
-} from 'lucide-react';
-import YouTubePlayer from 'youtube-player';
-import { usePlayerStore } from '../store/playerStore';
-import { usePlaylistStore } from '../store/playlistStore';
-import { useAuthStore } from '../store/authStore';
-import { useNavigate } from 'react-router-dom';
+  Minimize2,
+  ChevronUp,
+  ChevronDown,
+} from "lucide-react"
+import YouTubePlayer from "youtube-player"
+import { usePlayerStore } from "../store/playerStore"
+import { usePlaylistStore } from "../store/playlistStore"
+import { useAuthStore } from "../store/authStore"
+import { useNavigate } from "react-router-dom"
 
 const Player: React.FC = () => {
-  const { 
-    currentTrack, 
-    isPlaying, 
-    volume, 
-    progress, 
+  const {
+    currentTrack,
+    isPlaying,
+    volume,
+    progress,
     duration,
     queue,
-    togglePlay, 
-    setVolume, 
+    togglePlay,
+    setVolume,
     setProgress,
     setDuration,
     playNext,
-    playPrevious
-  } = usePlayerStore();
-  
-  const { toggleLike, likedSongs, addToRecentlyPlayed } = usePlaylistStore();
-  const { isAuthenticated } = useAuthStore();
-  const navigate = useNavigate();
-  
-  const [isExpanded, setIsExpanded] = useState(false);
-  const [showQueue, setShowQueue] = useState(false);
-  const [isMuted, setIsMuted] = useState(false);
-  const [prevVolume, setPrevVolume] = useState(volume);
-  
-  const playerRef = useRef<any>(null);
-  const playerContainerRef = useRef<HTMLDivElement>(null);
+    playPrevious,
+  } = usePlayerStore()
+
+  const { toggleLike, likedSongs, addToRecentlyPlayed } = usePlaylistStore()
+  const { isAuthenticated } = useAuthStore()
+  const navigate = useNavigate()
+
+  const [isExpanded, setIsExpanded] = useState(false)
+  const [showQueue, setShowQueue] = useState(false)
+  const [isMuted, setIsMuted] = useState(false)
+  const [prevVolume, setPrevVolume] = useState(volume)
+  const [showMiniControls, setShowMiniControls] = useState(false)
+
+  const playerRef = useRef<any>(null)
+  const playerContainerRef = useRef<HTMLDivElement>(null)
 
   // Initialize YouTube Player
   useEffect(() => {
     if (!playerRef.current) {
-      const container = document.createElement('div');
-      container.style.position = 'absolute';
-      container.style.visibility = 'hidden';
-      container.style.pointerEvents = 'none';
-      container.style.width = '1px';
-      container.style.height = '1px';
-      container.id = 'youtube-player';
-      document.body.appendChild(container);
+      const container = document.createElement("div")
+      container.style.position = "absolute"
+      container.style.visibility = "hidden"
+      container.style.pointerEvents = "none"
+      container.style.width = "1px"
+      container.style.height = "1px"
+      container.id = "youtube-player"
+      document.body.appendChild(container)
 
-      playerRef.current = YouTubePlayer('youtube-player', {
-        height: '1',
-        width: '1',
+      playerRef.current = YouTubePlayer("youtube-player", {
+        height: "1",
+        width: "1",
         playerVars: {
           autoplay: 1,
           controls: 0,
           modestbranding: 1,
           rel: 0,
           showinfo: 0,
-          playsinline: 1
-        }
-      });
+          playsinline: 1,
+        },
+      })
 
-      playerRef.current.on('stateChange', (event: any) => {
-        if (event.data === 0) { // Video ended
-          playNext();
+      playerRef.current.on("stateChange", (event: any) => {
+        if (event.data === 0) {
+          // Video ended
+          playNext()
         }
-      });
+      })
 
-      playerRef.current.on('ready', () => {
-        playerRef.current.setVolume(volume * 100);
-      });
+      playerRef.current.on("ready", () => {
+        playerRef.current.setVolume(volume * 100)
+      })
     }
 
     return () => {
       if (playerRef.current) {
-        playerRef.current.destroy();
-        const container = document.getElementById('youtube-player');
+        playerRef.current.destroy()
+        const container = document.getElementById("youtube-player")
         if (container) {
-          document.body.removeChild(container);
+          document.body.removeChild(container)
         }
       }
-    };
-  }, []);
+    }
+  }, [])
 
   // Handle track change
   useEffect(() => {
     if (currentTrack && playerRef.current) {
-      playerRef.current.loadVideoById(currentTrack.videoId);
+      playerRef.current.loadVideoById(currentTrack.videoId)
       if (isPlaying) {
-        playerRef.current.playVideo();
+        playerRef.current.playVideo()
       } else {
-        playerRef.current.pauseVideo();
+        playerRef.current.pauseVideo()
       }
-      addToRecentlyPlayed(currentTrack);
-      setDuration(currentTrack.duration);
+      addToRecentlyPlayed(currentTrack)
+      setDuration(currentTrack.duration)
     }
-  }, [currentTrack, addToRecentlyPlayed, setDuration]);
+  }, [currentTrack, addToRecentlyPlayed, setDuration])
 
   // Handle play/pause
   useEffect(() => {
     if (playerRef.current && currentTrack) {
       if (isPlaying) {
-        playerRef.current.playVideo();
+        playerRef.current.playVideo()
       } else {
-        playerRef.current.pauseVideo();
+        playerRef.current.pauseVideo()
       }
     }
-  }, [isPlaying, currentTrack]);
+  }, [isPlaying, currentTrack])
 
   // Handle volume change
   useEffect(() => {
     if (playerRef.current) {
-      playerRef.current.setVolume(volume * 100);
+      playerRef.current.setVolume(volume * 100)
     }
-  }, [volume]);
+  }, [volume])
 
   // Update progress
   useEffect(() => {
-    let interval: NodeJS.Timeout;
+    let interval: NodeJS.Timeout
     if (isPlaying) {
       interval = setInterval(async () => {
         if (playerRef.current) {
-          const currentTime = await playerRef.current.getCurrentTime();
-          setProgress(currentTime);
+          const currentTime = await playerRef.current.getCurrentTime()
+          setProgress(currentTime)
         }
-      }, 1000);
+      }, 1000)
     }
-    return () => clearInterval(interval);
-  }, [isPlaying, setProgress]);
+    return () => clearInterval(interval)
+  }, [isPlaying, setProgress])
 
   // Format time in MM:SS
   const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = Math.floor(seconds % 60);
-    return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
-  };
+    const mins = Math.floor(seconds / 60)
+    const secs = Math.floor(seconds % 60)
+    return `${mins}:${secs < 10 ? "0" : ""}${secs}`
+  }
 
   // Handle progress bar click
   const handleProgressBarClick = async (e: React.MouseEvent<HTMLDivElement>) => {
     if (playerRef.current && currentTrack) {
-      const rect = e.currentTarget.getBoundingClientRect();
-      const clickPosition = (e.clientX - rect.left) / rect.width;
-      const newTime = clickPosition * duration;
-      
-      await playerRef.current.seekTo(newTime, true);
-      setProgress(newTime);
+      const rect = e.currentTarget.getBoundingClientRect()
+      const clickPosition = (e.clientX - rect.left) / rect.width
+      const newTime = clickPosition * duration
+
+      await playerRef.current.seekTo(newTime, true)
+      setProgress(newTime)
     }
-  };
+  }
 
   // Handle volume toggle
   const toggleMute = () => {
     if (isMuted) {
-      setVolume(prevVolume);
+      setVolume(prevVolume)
     } else {
-      setPrevVolume(volume);
-      setVolume(0);
+      setPrevVolume(volume)
+      setVolume(0)
     }
-    setIsMuted(!isMuted);
-  };
+    setIsMuted(!isMuted)
+  }
 
   // Handle like button click with auth check
   const handleLikeClick = () => {
     if (!isAuthenticated) {
-      if (window.confirm('You need to be logged in to like songs. Would you like to log in now?')) {
-        navigate('/login');
+      if (window.confirm("You need to be logged in to like songs. Would you like to log in now?")) {
+        navigate("/login")
       }
-      return;
+      return
     }
-    
+
     if (currentTrack) {
-      toggleLike(currentTrack);
+      toggleLike(currentTrack)
     }
-  };
+  }
 
   // Check if track is liked
-  const isLiked = currentTrack ? likedSongs.some(track => track.id === currentTrack.id) : false;
+  const isLiked = currentTrack ? likedSongs.some((track) => track.id === currentTrack.id) : false
+
+  // Toggle mini controls for mobile
+  const toggleMiniControls = () => {
+    setShowMiniControls(!showMiniControls)
+  }
 
   return (
-    <div 
+    <div
       ref={playerContainerRef}
       className={`
         fixed transition-all duration-300 ease-in-out z-50
-        ${isExpanded 
-          ? 'inset-0 bg-gradient-to-b from-gray-900 to-black' 
-          : 'bottom-0 left-0 right-0 bg-gray-900 border-t border-gray-800'
+        ${
+          isExpanded
+            ? "inset-0 bg-gradient-to-b from-gray-900 to-black"
+            : "bottom-0 left-0 right-0 bg-gray-900 border-t border-gray-800"
         }
       `}
     >
       {/* Mobile Expanded View */}
       {isExpanded && (
         <div className="h-full p-4 flex flex-col">
-          <button
-            onClick={() => setIsExpanded(false)}
-            className="self-end p-2"
-          >
+          <button onClick={() => setIsExpanded(false)} className="self-end p-2" aria-label="Minimize player">
             <Minimize2 size={24} className="text-white" />
           </button>
-          
+
           <div className="flex-1 flex flex-col items-center justify-center">
             {currentTrack && (
               <>
-                <img 
-                  src={currentTrack.thumbnail} 
+                <img
+                  src={currentTrack.thumbnail || "/placeholder.svg"}
                   alt={currentTrack.title}
                   className="w-64 h-64 object-cover rounded-lg shadow-2xl mb-8"
                 />
-                <h2 className="text-white text-xl font-bold mb-2">{currentTrack.title}</h2>
-                <p className="text-gray-400 mb-8">{currentTrack.artist}</p>
+                <h2 className="text-white text-xl font-bold mb-2 text-center px-4">{currentTrack.title}</h2>
+                <p className="text-gray-400 mb-8 text-center">{currentTrack.artist}</p>
               </>
             )}
-            
+
             {/* Progress Bar */}
-            <div className="w-full max-w-md flex items-center gap-2 mb-8">
-              <span className="text-xs text-gray-400 w-10 text-right">
-                {formatTime(progress)}
-              </span>
-              <div 
-                className="flex-1 h-1 bg-gray-700 rounded-full cursor-pointer"
-                onClick={handleProgressBarClick}
-              >
-                <div 
+            <div className="w-full max-w-md flex items-center gap-2 mb-8 px-4">
+              <span className="text-xs text-gray-400 w-10 text-right">{formatTime(progress)}</span>
+              <div className="flex-1 h-2 bg-gray-700 rounded-full cursor-pointer" onClick={handleProgressBarClick}>
+                <div
                   className="h-full bg-green-500 rounded-full relative group"
                   style={{ width: `${(progress / duration) * 100 || 0}%` }}
                 >
-                  <div className="absolute right-0 top-1/2 transform -translate-y-1/2 w-3 h-3 bg-white rounded-full opacity-0 group-hover:opacity-100" />
+                  <div className="absolute right-0 top-1/2 transform -translate-y-1/2 w-4 h-4 bg-white rounded-full opacity-0 group-hover:opacity-100" />
                 </div>
               </div>
-              <span className="text-xs text-gray-400 w-10">
-                {formatTime(duration)}
-              </span>
+              <span className="text-xs text-gray-400 w-10">{formatTime(duration)}</span>
             </div>
-            
+
             {/* Controls */}
-            <div className="flex items-center gap-8">
-              <button className="text-gray-400 hover:text-white">
+            <div className="flex items-center gap-8 mb-6">
+              <button className="text-gray-400 hover:text-white" aria-label="Shuffle">
                 <Shuffle size={20} />
               </button>
-              <button 
-                className="text-gray-400 hover:text-white"
-                onClick={playPrevious}
-              >
+              <button className="text-gray-400 hover:text-white" onClick={playPrevious} aria-label="Previous track">
                 <SkipBack size={24} />
               </button>
-              <button 
+              <button
                 className="bg-white rounded-full p-4 text-black hover:scale-105 transition"
                 onClick={togglePlay}
+                aria-label={isPlaying ? "Pause" : "Play"}
               >
                 {isPlaying ? <Pause size={24} /> : <Play size={24} fill="currentColor" />}
               </button>
-              <button 
-                className="text-gray-400 hover:text-white"
-                onClick={playNext}
-              >
+              <button className="text-gray-400 hover:text-white" onClick={playNext} aria-label="Next track">
                 <SkipForward size={24} />
               </button>
-              <button className="text-gray-400 hover:text-white">
+              <button className="text-gray-400 hover:text-white" aria-label="Repeat">
                 <Repeat size={20} />
               </button>
             </div>
+
+            {/* Volume Control in Expanded View */}
+            <div className="flex items-center gap-3 px-4 w-full max-w-md">
+              <button
+                className="text-gray-400 hover:text-white"
+                onClick={toggleMute}
+                aria-label={volume === 0 ? "Unmute" : "Mute"}
+              >
+                {volume === 0 ? <VolumeX size={20} /> : <Volume2 size={20} />}
+              </button>
+              <div
+                className="w-full h-2 bg-gray-700 rounded-full cursor-pointer"
+                onClick={(e) => {
+                  const rect = e.currentTarget.getBoundingClientRect()
+                  const clickPosition = (e.clientX - rect.left) / rect.width
+                  setVolume(Math.max(0, Math.min(1, clickPosition)))
+                  setIsMuted(false)
+                }}
+              >
+                <div className="h-full bg-green-500 rounded-full" style={{ width: `${volume * 100}%` }} />
+              </div>
+            </div>
+
+            {/* Like Button in Expanded View */}
+            <button
+              className={`mt-6 flex items-center gap-2 px-4 py-2 rounded-full border ${
+                isLiked ? "text-green-500 border-green-500" : "text-white border-gray-600"
+              }`}
+              onClick={handleLikeClick}
+              aria-label={isLiked ? "Remove from liked songs" : "Add to liked songs"}
+            >
+              <Heart size={18} fill={isLiked ? "currentColor" : "none"} />
+              <span>{isLiked ? "Liked" : "Like"}</span>
+            </button>
           </div>
         </div>
       )}
 
       {/* Regular Player View */}
-      <div className={`p-4 ${isExpanded ? 'hidden' : 'block'}`}>
+      <div className={`p-2 sm:p-4 ${isExpanded ? "hidden" : "block"}`}>
         <div className="flex items-center justify-between max-w-7xl mx-auto">
           {/* Track Info */}
-          <div className="flex items-center w-1/4 min-w-0">
+          <div className="flex items-center flex-1 min-w-0 mr-2">
             {currentTrack ? (
               <>
                 <div className="relative">
-                  <img 
-                    src={currentTrack.thumbnail} 
+                  <img
+                    src={currentTrack.thumbnail || "/placeholder.svg"}
                     alt={currentTrack.title}
-                    className="w-14 h-14 object-cover mr-3"
+                    className="w-12 h-12 sm:w-14 sm:h-14 object-cover mr-2 sm:mr-3 rounded"
                   />
                   <button
                     onClick={() => setIsExpanded(true)}
                     className="absolute inset-0 md:hidden"
+                    aria-label="Expand player"
                   >
-                    <Maximize2 size={20} className="text-white absolute top-1 right-1" />
+                    <span className="sr-only">Expand player</span>
                   </button>
                 </div>
-                <div className="min-w-0">
-                  <div className="text-white truncate">{currentTrack.title}</div>
-                  <div className="text-gray-400 text-sm truncate">{currentTrack.artist}</div>
+                <div className="min-w-0 flex-1">
+                  <div className="text-white text-sm sm:text-base truncate">{currentTrack.title}</div>
+                  <div className="text-gray-400 text-xs sm:text-sm truncate">{currentTrack.artist}</div>
                 </div>
-                <button 
-                  className={`ml-4 focus:outline-none ${isLiked ? 'text-green-500' : 'text-gray-400 hover:text-white'}`}
+                <button
+                  className={`ml-2 focus:outline-none ${isLiked ? "text-green-500" : "text-gray-400 hover:text-white"}`}
                   onClick={handleLikeClick}
+                  aria-label={isLiked ? "Remove from liked songs" : "Add to liked songs"}
                 >
-                  <Heart size={20} fill={isLiked ? 'currentColor' : 'none'} />
+                  <Heart size={18} fill={isLiked ? "currentColor" : "none"} />
                 </button>
               </>
             ) : (
-              <div className="text-gray-400">No track selected</div>
+              <div className="text-gray-400 text-sm">No track selected</div>
             )}
           </div>
-          
-          {/* Player Controls - Hide on mobile when not expanded */}
+
+          {/* Mobile Mini Controls Toggle */}
+          <div className="md:hidden flex items-center">
+            <button
+              onClick={togglePlay}
+              className="mr-2 bg-white rounded-full p-1.5 text-black hover:scale-105 transition"
+              aria-label={isPlaying ? "Pause" : "Play"}
+            >
+              {isPlaying ? <Pause size={16} /> : <Play size={16} fill="currentColor" />}
+            </button>
+            <button
+              onClick={toggleMiniControls}
+              className="text-white p-1"
+              aria-label={showMiniControls ? "Hide controls" : "Show controls"}
+            >
+              {showMiniControls ? <ChevronDown size={20} /> : <ChevronUp size={20} />}
+            </button>
+          </div>
+
+          {/* Player Controls - Desktop */}
           <div className="hidden md:flex flex-col items-center w-2/4">
             <div className="flex items-center gap-4 mb-2">
-              <button className="text-gray-400 hover:text-white">
+              <button className="text-gray-400 hover:text-white" aria-label="Shuffle">
                 <Shuffle size={18} />
               </button>
-              <button 
-                className="text-gray-400 hover:text-white"
-                onClick={playPrevious}
-              >
+              <button className="text-gray-400 hover:text-white" onClick={playPrevious} aria-label="Previous track">
                 <SkipBack size={24} />
               </button>
-              <button 
+              <button
                 className="bg-white rounded-full p-2 text-black hover:scale-105 transition"
                 onClick={togglePlay}
+                aria-label={isPlaying ? "Pause" : "Play"}
               >
                 {isPlaying ? <Pause size={24} /> : <Play size={24} fill="currentColor" />}
               </button>
-              <button 
-                className="text-gray-400 hover:text-white"
-                onClick={playNext}
-              >
+              <button className="text-gray-400 hover:text-white" onClick={playNext} aria-label="Next track">
                 <SkipForward size={24} />
               </button>
-              <button className="text-gray-400 hover:text-white">
+              <button className="text-gray-400 hover:text-white" aria-label="Repeat">
                 <Repeat size={18} />
               </button>
             </div>
-            
+
             <div className="flex items-center w-full gap-2">
-              <span className="text-xs text-gray-400 w-10 text-right">
-                {formatTime(progress)}
-              </span>
-              <div 
-                className="flex-1 h-1 bg-gray-700 rounded-full cursor-pointer"
-                onClick={handleProgressBarClick}
-              >
-                <div 
+              <span className="text-xs text-gray-400 w-10 text-right">{formatTime(progress)}</span>
+              <div className="flex-1 h-1 bg-gray-700 rounded-full cursor-pointer" onClick={handleProgressBarClick}>
+                <div
                   className="h-full bg-green-500 rounded-full relative group"
                   style={{ width: `${(progress / duration) * 100 || 0}%` }}
                 >
                   <div className="absolute right-0 top-1/2 transform -translate-y-1/2 w-3 h-3 bg-white rounded-full opacity-0 group-hover:opacity-100" />
                 </div>
               </div>
-              <span className="text-xs text-gray-400 w-10">
-                {formatTime(duration)}
-              </span>
+              <span className="text-xs text-gray-400 w-10">{formatTime(duration)}</span>
             </div>
           </div>
-          
-          {/* Volume Controls - Hide on mobile */}
+
+          {/* Volume Controls - Desktop */}
           <div className="hidden md:flex items-center justify-end w-1/4 gap-3">
-            <button 
+            <button
               className="text-gray-400 hover:text-white"
               onClick={() => setShowQueue(!showQueue)}
+              aria-label={showQueue ? "Hide queue" : "Show queue"}
             >
               <ListMusic size={20} />
             </button>
-            <button 
+            <button
               className="text-gray-400 hover:text-white"
               onClick={toggleMute}
+              aria-label={volume === 0 ? "Unmute" : "Mute"}
             >
               {volume === 0 ? <VolumeX size={20} /> : <Volume2 size={20} />}
             </button>
-            <div 
+            <div
               className="w-24 h-1 bg-gray-700 rounded-full cursor-pointer"
               onClick={(e) => {
-                const rect = e.currentTarget.getBoundingClientRect();
-                const clickPosition = (e.clientX - rect.left) / rect.width;
-                setVolume(Math.max(0, Math.min(1, clickPosition)));
-                setIsMuted(false);
+                const rect = e.currentTarget.getBoundingClientRect()
+                const clickPosition = (e.clientX - rect.left) / rect.width
+                setVolume(Math.max(0, Math.min(1, clickPosition)))
+                setIsMuted(false)
               }}
             >
-              <div 
-                className="h-full bg-green-500 rounded-full"
-                style={{ width: `${volume * 100}%` }}
-              />
+              <div className="h-full bg-green-500 rounded-full" style={{ width: `${volume * 100}%` }} />
             </div>
           </div>
         </div>
+
+        {/* Mobile Mini Controls */}
+        {showMiniControls && (
+          <div className="md:hidden mt-2 px-2">
+            {/* Progress Bar */}
+            <div className="flex items-center gap-2 mb-2">
+              <span className="text-xs text-gray-400 w-8 text-right">{formatTime(progress)}</span>
+              <div className="flex-1 h-1.5 bg-gray-700 rounded-full cursor-pointer" onClick={handleProgressBarClick}>
+                <div
+                  className="h-full bg-green-500 rounded-full"
+                  style={{ width: `${(progress / duration) * 100 || 0}%` }}
+                />
+              </div>
+              <span className="text-xs text-gray-400 w-8">{formatTime(duration)}</span>
+            </div>
+
+            {/* Controls */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <button className="text-gray-400" onClick={playPrevious} aria-label="Previous track">
+                  <SkipBack size={20} />
+                </button>
+                <button className="text-gray-400" onClick={playNext} aria-label="Next track">
+                  <SkipForward size={20} />
+                </button>
+              </div>
+
+              <div className="flex items-center gap-4">
+                <button className="text-gray-400" onClick={toggleMute} aria-label={volume === 0 ? "Unmute" : "Mute"}>
+                  {volume === 0 ? <VolumeX size={18} /> : <Volume2 size={18} />}
+                </button>
+                <button
+                  className="text-gray-400"
+                  onClick={() => setShowQueue(!showQueue)}
+                  aria-label={showQueue ? "Hide queue" : "Show queue"}
+                >
+                  <ListMusic size={18} />
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
-      
+
       {/* Queue Panel */}
       {showQueue && (
-        <div className="absolute bottom-full right-0 w-80 max-h-96 overflow-y-auto bg-gray-900 border border-gray-800 rounded-t-lg shadow-lg">
-          <div className="p-4 border-b border-gray-800">
+        <div className="absolute bottom-full right-0 w-full sm:w-80 max-h-96 overflow-y-auto bg-gray-900 border border-gray-800 rounded-t-lg shadow-lg">
+          <div className="p-4 border-b border-gray-800 flex justify-between items-center">
             <h3 className="text-white font-bold">Queue</h3>
+            <button
+              className="text-gray-400 hover:text-white"
+              onClick={() => setShowQueue(false)}
+              aria-label="Close queue"
+            >
+              <ChevronDown size={20} />
+            </button>
           </div>
           <div className="p-2">
             {queue.length > 0 ? (
               queue.map((track, index) => (
-                <div 
-                  key={`${track.id}-${index}`}
-                  className="flex items-center p-2 hover:bg-gray-800 rounded-md"
-                >
-                  <img 
-                    src={track.thumbnail} 
+                <div key={`${track.id}-${index}`} className="flex items-center p-2 hover:bg-gray-800 rounded-md">
+                  <img
+                    src={track.thumbnail || "/placeholder.svg"}
                     alt={track.title}
-                    className="w-10 h-10 object-cover mr-3"
+                    className="w-10 h-10 object-cover mr-3 rounded"
                   />
                   <div className="truncate flex-1">
                     <div className="text-white text-sm truncate">{track.title}</div>
@@ -422,7 +506,7 @@ const Player: React.FC = () => {
         </div>
       )}
     </div>
-  );
-};
+  )
+}
 
-export default Player;
+export default Player
