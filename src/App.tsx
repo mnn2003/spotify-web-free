@@ -10,16 +10,26 @@ import RecentlyPlayedPage from './pages/RecentlyPlayedPage';
 import CategoryPage from './pages/CategoryPage';
 import LoginPage from './pages/LoginPage';
 import { useAuthStore } from './store/authStore';
+import { usePlaylistStore } from './store/playlistStore';
 
 function App() {
-  const { checkAuth } = useAuthStore();
+  const { checkAuth, isAuthenticated } = useAuthStore();
+  const { fetchUserData } = usePlaylistStore();
   
+  // Check for stored auth on app load
   useEffect(() => {
     checkAuth();
   }, [checkAuth]);
 
+  // Fetch user data when authenticated
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetchUserData();
+    }
+  }, [isAuthenticated, fetchUserData]);
+
   return (
-    <HashRouter> {/* Changed from BrowserRouter to HashRouter */}
+    <HashRouter>
       <Routes>
         <Route path="/login" element={<LoginPage />} />
         
