@@ -78,7 +78,7 @@ const TrackList: React.FC<TrackListProps> = ({
     <div className="w-full">
       {showHeader && (
         <div className="grid grid-cols-12 gap-4 px-4 py-2 border-b border-gray-800 text-gray-400 text-sm">
-          <div className="col-span-1 text-center">#</div>
+          <div className="col-span-1 text-center">##</div>
           <div className="col-span-5">TITLE</div>
           {showArtist && <div className="col-span-3">ARTIST</div>}
           {showAlbum && <div className="col-span-2">ALBUM</div>}
