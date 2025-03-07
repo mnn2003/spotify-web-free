@@ -42,11 +42,8 @@ const TrackList: React.FC<TrackListProps> = ({
         togglePlay();
       } else {
         setCurrentTrack(track);
-        // Add the clicked track and all subsequent tracks to the queue
         const trackIndex = tracks.findIndex(t => t.id === track.id);
         const remainingTracks = tracks.slice(trackIndex);
-        
-        // Clear queue and add all tracks
         usePlayerStore.getState().clearQueue();
         remainingTracks.forEach(t => addToQueue(t));
       }
@@ -55,109 +52,71 @@ const TrackList: React.FC<TrackListProps> = ({
 
   const handleLikeClick = (track: Track, e: React.MouseEvent) => {
     e.stopPropagation();
-    
     if (!isAuthenticated) {
       if (window.confirm('You need to be logged in to like songs. Would you like to log in now?')) {
         navigate('/login');
       }
       return;
     }
-    
     toggleLike(track);
   };
 
-  const isTrackPlaying = (track: Track) => {
-    return currentTrack?.id === track.id && isPlaying;
-  };
-
-  const isTrackLiked = (track: Track) => {
-    return likedSongs.some(t => t.id === track.id);
-  };
+  const isTrackPlaying = (track: Track) => currentTrack?.id === track.id && isPlaying;
+  const isTrackLiked = (track: Track) => likedSongs.some(t => t.id === track.id);
 
   return (
     <div className="w-full">
       {showHeader && (
-        <div className="grid grid-cols-12 gap-4 px-4 py-2 border-b border-gray-800 text-gray-400 text-sm">
-          <div className="col-span-1 text-center">##</div>
-          <div className="col-span-5">TITLE</div>
-          {showArtist && <div className="col-span-3">ARTIST</div>}
-          {showAlbum && <div className="col-span-2">ALBUM</div>}
+        <div className="hidden md:grid grid-cols-12 gap-4 px-4 py-2 border-b border-gray-700 text-gray-400 text-sm">
+          <div className="col-span-1 text-center">#</div>
+          <div className="col-span-6 md:col-span-5">Title</div>
+          {showArtist && <div className="hidden md:block col-span-3">Artist</div>}
+          {showAlbum && <div className="hidden md:block col-span-2">Album</div>}
           {showDuration && (
             <div className="col-span-1 flex justify-end">
               <Clock size={16} />
             </div>
           )}
-          <div className="col-span-1"></div>
         </div>
       )}
 
-      <div className="divide-y divide-gray-800">
+      <div className="divide-y divide-gray-700">
         {tracks.map((track, index) => (
           <div
             key={track.id}
-            className="grid grid-cols-12 gap-4 px-4 py-3 hover:bg-gray-800 transition-colors group cursor-pointer"
+            className="grid grid-cols-12 md:grid-cols-12 gap-4 px-4 py-3 hover:bg-gray-800 transition-all cursor-pointer rounded-lg"
             onClick={() => handleTrackClick(track)}
           >
             <div className="col-span-1 flex items-center justify-center">
-              <div className="group-hover:hidden">{index + 1}</div>
-              <button
-                className="hidden group-hover:block text-white"
-              >
-                {isTrackPlaying(track) ? (
-                  <div className="w-4 h-4 relative">
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <div className="w-1 h-3 bg-green-500 mx-px animate-sound-wave"></div>
-                      <div className="w-1 h-2 bg-green-500 mx-px animate-sound-wave animation-delay-200"></div>
-                      <div className="w-1 h-4 bg-green-500 mx-px animate-sound-wave animation-delay-400"></div>
-                    </div>
-                  </div>
-                ) : (
-                  <Play size={16} fill="currentColor" />
-                )}
+              <button className="text-white">
+                {isTrackPlaying(track) ? '⏸️' : <Play size={16} fill="currentColor" />}
               </button>
             </div>
 
-            <div className="col-span-5 flex items-center">
+            <div className="col-span-7 md:col-span-5 flex items-center">
               <img
                 src={track.thumbnail}
                 alt={track.title}
-                className="w-10 h-10 object-cover mr-3"
+                className="w-12 h-12 object-cover rounded-md mr-3"
               />
               <div className="truncate">
-                <div className={`truncate font-medium ${isTrackPlaying(track) ? 'text-green-500' : 'text-white'}`}>
-                  {track.title}
-                </div>
+                <div className={`truncate font-medium ${isTrackPlaying(track) ? 'text-green-400' : 'text-white'}`}>{track.title}</div>
+                {showArtist && <div className="text-xs text-gray-400 md:hidden">{track.artist}</div>}
               </div>
             </div>
 
-            {showArtist && (
-              <div className="col-span-3 flex items-center text-gray-400 truncate">
-                {track.artist}
-              </div>
-            )}
+            {showArtist && <div className="hidden md:flex col-span-3 items-center text-gray-400 truncate">{track.artist}</div>}
+            {showAlbum && <div className="hidden md:flex col-span-2 items-center text-gray-400 truncate">{track.album || '-'}</div>}
+            {showDuration && <div className="col-span-2 md:col-span-1 flex items-center justify-end text-gray-400">{formatDuration(track.duration)}</div>}
 
-            {showAlbum && (
-              <div className="col-span-2 flex items-center text-gray-400 truncate">
-                {/* Album would go here */}
-              </div>
-            )}
-
-            {showDuration && (
-              <div className="col-span-1 flex items-center justify-end text-gray-400">
-                {formatDuration(track.duration)}
-              </div>
-            )}
-
-            <div className="col-span-1 flex items-center justify-end space-x-2">
+            <div className="col-span-2 md:col-span-1 flex items-center justify-end space-x-3">
               <button
-                className={`opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity ${
-                  isTrackLiked(track) ? 'text-green-500' : 'text-gray-400 hover:text-white'
-                }`}
+                className={`transition-colors ${isTrackLiked(track) ? 'text-green-400' : 'text-gray-400 hover:text-white'}`}
                 onClick={(e) => handleLikeClick(track, e)}
               >
                 <Heart size={16} fill={isTrackLiked(track) ? 'currentColor' : 'none'} />
               </button>
-              <button className="opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity text-gray-400 hover:text-white">
+              <button className="text-gray-400 hover:text-white">
                 <MoreHorizontal size={16} />
               </button>
             </div>
