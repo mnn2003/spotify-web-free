@@ -68,12 +68,12 @@ const Player: React.FC = () => {
         height: "1",
         width: "1",
         playerVars: {
-          autoplay: 1,
+          autoplay: 1, // Autoplay the video
           controls: 0,
           modestbranding: 1,
           rel: 0,
           showinfo: 0,
-          playsinline: 1,
+          playsinline: 1, // Allow inline playback on iOS
         },
       })
 
@@ -91,7 +91,7 @@ const Player: React.FC = () => {
 
     return () => {
       if (playerRef.current) {
-        playerRef.current.destroy()
+        playerRef.current.pauseVideo() // Pause the video but don't destroy the player
         const container = document.getElementById("youtube-player")
         if (container) {
           document.body.removeChild(container)
@@ -145,6 +145,44 @@ const Player: React.FC = () => {
     }
     return () => clearInterval(interval)
   }, [isPlaying, setProgress])
+
+  // Handle visibility change to ensure background playback
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (playerRef.current && currentTrack) {
+        if (document.hidden) {
+          // When the tab is hidden, ensure the video continues playing
+          playerRef.current.playVideo()
+        } else {
+          // When the tab is visible again, ensure the video is in the correct state
+          if (isPlaying) {
+            playerRef.current.playVideo()
+          } else {
+            playerRef.current.pauseVideo()
+          }
+        }
+      }
+    }
+
+    document.addEventListener("visibilitychange", handleVisibilityChange)
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange)
+    }
+  }, [isPlaying, currentTrack])
+
+  // Handle page unload
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      if (playerRef.current) {
+        playerRef.current.pauseVideo()
+      }
+    }
+
+    window.addEventListener("beforeunload", handleBeforeUnload)
+    return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload)
+    }
+  }, [])
 
   // Format time in MM:SS
   const formatTime = (seconds: number) => {
