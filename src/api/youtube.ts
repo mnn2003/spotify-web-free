@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { SearchResult, Track } from '../types';
 
-const API_KEY = 'AIzaSyBilwLKYAnGJJRo4Sq6NKxWY3H0kExW75A';
+const API_KEY = 'AIzaSyDA1n8683_NaCPq8ngS0JjaE_cDueijYqU';
 const BASE_URL = 'https://www.googleapis.com/youtube/v3';
 const CACHE_DURATION = 1000 * 60 * 60; // 1 hour
 
