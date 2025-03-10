@@ -18,10 +18,9 @@ import {
   ChevronDown,
 } from "lucide-react"
 import YouTubePlayer from "youtube-player"
-import { usePlayerStore } from "../store/playerStore"
-import { usePlaylistStore } from "../store/playlistStore"
-import { useAuthStore } from "../store/authStore"
-import { useNavigate } from "react-router-dom"
+import { usePlayerStore } from "@/store/playerStore"
+import { usePlaylistStore } from "@/store/playlistStore"
+import { useAuthStore } from "@/store/authStore"
 
 const Player: React.FC = () => {
   const {
@@ -41,7 +40,9 @@ const Player: React.FC = () => {
 
   const { toggleLike, likedSongs, addToRecentlyPlayed } = usePlaylistStore()
   const { isAuthenticated } = useAuthStore()
-  const navigate = useNavigate()
+
+  // Navigation state
+  const [navigateTo, setNavigateTo] = useState<string | null>(null)
 
   const [isExpanded, setIsExpanded] = useState(false)
   const [showQueue, setShowQueue] = useState(false)
@@ -49,8 +50,13 @@ const Player: React.FC = () => {
   const [prevVolume, setPrevVolume] = useState(volume)
   const [showMiniControls, setShowMiniControls] = useState(false)
 
+  // New state for tracking click positions in fullscreen mode
+  const [clickStartPosition, setClickStartPosition] = useState<{ x: number; y: number } | null>(null)
+  const [clickThreshold] = useState(5) // Pixels of movement allowed before considering it a drag instead of a click
+
   const playerRef = useRef<any>(null)
   const playerContainerRef = useRef<HTMLDivElement>(null)
+  const expandedImageRef = useRef<HTMLImageElement>(null)
 
   // Initialize YouTube Player
   useEffect(() => {
@@ -184,6 +190,16 @@ const Player: React.FC = () => {
     }
   }, [])
 
+  // Handle navigation effect
+  useEffect(() => {
+    if (navigateTo) {
+      // In a real app, you would use router.push or navigate here
+      console.log(`Navigating to: ${navigateTo}`)
+      // Reset navigation state
+      setNavigateTo(null)
+    }
+  }, [navigateTo])
+
   // Format time in MM:SS
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60)
@@ -218,7 +234,7 @@ const Player: React.FC = () => {
   const handleLikeClick = () => {
     if (!isAuthenticated) {
       if (window.confirm("You need to be logged in to like songs. Would you like to log in now?")) {
-        navigate("/login")
+        setNavigateTo("/login")
       }
       return
     }
@@ -236,6 +252,48 @@ const Player: React.FC = () => {
     setShowMiniControls(!showMiniControls)
   }
 
+  // New handlers for fullscreen mode interactions
+  const handleFullscreenMouseDown = (e: React.MouseEvent) => {
+    if (isExpanded) {
+      setClickStartPosition({ x: e.clientX, y: e.clientY })
+    }
+  }
+
+  const handleFullscreenMouseMove = (e: React.MouseEvent) => {
+    if (isExpanded && clickStartPosition) {
+      const deltaX = Math.abs(e.clientX - clickStartPosition.x)
+      const deltaY = Math.abs(e.clientY - clickStartPosition.y)
+
+      // If moved more than threshold, consider it a drag and not a potential click
+      if (deltaX > clickThreshold || deltaY > clickThreshold) {
+        setClickStartPosition(null)
+      }
+    }
+  }
+
+  const handleFullscreenMouseUp = (e: React.MouseEvent) => {
+    if (isExpanded && clickStartPosition) {
+      // This was a click (not a drag) in fullscreen mode
+      // Toggle play/pause when clicking on the album art
+      if (expandedImageRef.current && expandedImageRef.current.contains(e.target as Node)) {
+        togglePlay()
+      } else {
+        // Clicking elsewhere in the fullscreen view (could add other behaviors)
+        // For now, we'll just toggle play/pause for the entire fullscreen area
+        togglePlay()
+      }
+      setClickStartPosition(null)
+    }
+  }
+
+  // Handle artist click to navigate to artist page
+  const handleArtistClick = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    if (currentTrack?.artist) {
+      setNavigateTo(`/artist/${encodeURIComponent(currentTrack.artist)}`)
+    }
+  }
+
   return (
     <div
       ref={playerContainerRef}
@@ -247,6 +305,9 @@ const Player: React.FC = () => {
             : "bottom-0 left-0 right-0 bg-gray-900 border-t border-gray-800"
         }
       `}
+      onMouseDown={handleFullscreenMouseDown}
+      onMouseMove={handleFullscreenMouseMove}
+      onMouseUp={handleFullscreenMouseUp}
     >
       {/* Mobile Expanded View */}
       {isExpanded && (
@@ -259,12 +320,18 @@ const Player: React.FC = () => {
             {currentTrack && (
               <>
                 <img
+                  ref={expandedImageRef}
                   src={currentTrack.thumbnail || "/placeholder.svg"}
                   alt={currentTrack.title}
-                  className="w-64 h-64 object-cover rounded-lg shadow-2xl mb-8"
+                  className="w-64 h-64 object-cover rounded-lg shadow-2xl mb-8 cursor-pointer"
                 />
                 <h2 className="text-white text-xl font-bold mb-2 text-center px-4">{currentTrack.title}</h2>
-                <p className="text-gray-400 mb-8 text-center">{currentTrack.artist}</p>
+                <p
+                  className="text-gray-400 mb-8 text-center cursor-pointer hover:text-white transition-colors"
+                  onClick={handleArtistClick}
+                >
+                  {currentTrack.artist}
+                </p>
               </>
             )}
 
@@ -365,7 +432,12 @@ const Player: React.FC = () => {
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="text-white text-sm sm:text-base truncate">{currentTrack.title}</div>
-                  <div className="text-gray-400 text-xs sm:text-sm truncate">{currentTrack.artist}</div>
+                  <div
+                    className="text-gray-400 text-xs sm:text-sm truncate cursor-pointer hover:text-white transition-colors"
+                    onClick={handleArtistClick}
+                  >
+                    {currentTrack.artist}
+                  </div>
                 </div>
                 <button
                   className={`ml-2 focus:outline-none ${isLiked ? "text-green-500" : "text-gray-400 hover:text-white"}`}
