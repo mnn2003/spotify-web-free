@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { getPopularMusicVideos, getVideosByCategory, getVideoDetails } from '../api/youtube';
+import { getPopularMusicVideos, searchVideos, getVideoDetails } from '../api/youtube';
 import { SearchResult, Track } from '../types';
 import TrackCard from '../components/TrackCard';
-import CategoryCard from '../components/CategoryCard';
 import { useAuthStore } from '../store/authStore';
 
 const HomePage: React.FC = () => {
@@ -12,52 +11,15 @@ const HomePage: React.FC = () => {
   const { user } = useAuthStore();
 
   const trendingSongs = [
-    "Kaun Tujhe",
-    "Ishq",
-    "Die With A Smile",
-    "Sahiba",
-    "Tu Hain Toh Main Hoon",
-    "MANIAC - Bonus Track",
-    "Apna Bana Le",
-    "Sajni",
-    "Millionaire",
-    "Tujhe Kitna Chahne Lage",
-    "Aaj Ki Raat",
-    "Wavy",
-    "Fell For You",
-    "Tum Se",
-    "Satranga",
-    "Victory Anthem",
-    "Chuttamalle",
-    "Bewajah",
-    "Ye Tune Kya Kiya",
-    "Humdard",
-    "Tainu Khabar Nahi",
-    "Sang Rahiyo",
-    "Husn",
-    "Ajab Si",
-    "Uyi Amma",
-    "Agar Tum Saath Ho",
-    "Bulleya",
-    "Tera Fitoor",
-    "Jaane Tu",
-    "Kesariya",
-    "Sunn Raha Hai",
-    "Guzarish",
-    "Naina",
-    "Bujji Thalli",
-    "O Saathi",
-    "Mere Sohneya",
-    "Ishq Mein",
-    "Russian Bandana",
-    "Paththavaikkum",
-    "Maiyya",
-    "Payal",
-    "Jaana Samjho Na",
-    "blue",
-    "Aayi Nai",
-    "Tujhe Kitna Chahne Lage",
-    "Sajni"
+    "Kaun Tujhe", "Ishq", "Die With A Smile", "Sahiba", "Tu Hain Toh Main Hoon",
+    "MANIAC - Bonus Track", "Apna Bana Le", "Sajni", "Millionaire", "Tujhe Kitna Chahne Lage",
+    "Aaj Ki Raat", "Wavy", "Fell For You", "Tum Se", "Satranga", "Victory Anthem",
+    "Chuttamalle", "Bewajah", "Ye Tune Kya Kiya", "Humdard", "Tainu Khabar Nahi",
+    "Sang Rahiyo", "Husn", "Ajab Si", "Uyi Amma", "Agar Tum Saath Ho", "Bulleya",
+    "Tera Fitoor", "Jaane Tu", "Kesariya", "Sunn Raha Hai", "Guzarish", "Naina",
+    "Bujji Thalli", "O Saathi", "Mere Sohneya", "Ishq Mein", "Russian Bandana",
+    "Paththavaikkum", "Maiyya", "Payal", "Jaana Samjho Na", "blue", "Aayi Nai",
+    "Tujhe Kitna Chahne Lage", "Sajni"
   ];
 
   useEffect(() => {
@@ -79,19 +41,26 @@ const HomePage: React.FC = () => {
       try {
         const trackPromises = trendingSongs.map(async (title) => {
           try {
-            const searchResults = await getVideosByCategory(title, "music"); // Assuming this function fetches by title
+            const searchResults = await searchVideos(title, 1);
             if (searchResults.length === 0) throw new Error(`No video found for ${title}`);
-            
+
             const videoId = searchResults[0].videoId;
             const details = await getVideoDetails(videoId);
-            
-            return { id: details.videoId, title: details.title, artist: details.artist };
+
+            return {
+              id: details.videoId,
+              title: details.title,
+              artist: details.artist,
+              thumbnail: details.thumbnail,
+              duration: details.duration
+            };
           } catch (error) {
             console.error(`Error fetching video for ${title}:`, error);
             return null;
           }
         });
-        const tracks = await Promise.all(trackPromises);
+        
+        const tracks = (await Promise.all(trackPromises)).filter(track => track !== null);
         setLocalTrending(tracks);
       } catch (error) {
         console.error('Error fetching trending songs:', error);
