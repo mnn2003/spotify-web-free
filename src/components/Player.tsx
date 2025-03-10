@@ -18,9 +18,10 @@ import {
   ChevronDown,
 } from "lucide-react"
 import YouTubePlayer from "youtube-player"
-import { usePlayerStore } from "@/store/playerStore"
-import { usePlaylistStore } from "@/store/playlistStore"
-import { useAuthStore } from "@/store/authStore"
+import { usePlayerStore } from "../store/playerStore"
+import { usePlaylistStore } from "../store/playlistStore"
+import { useAuthStore } from "../store/authStore"
+import { useNavigate } from "react-router-dom"
 
 const Player: React.FC = () => {
   const {
