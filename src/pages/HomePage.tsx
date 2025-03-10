@@ -78,8 +78,18 @@ const HomePage: React.FC = () => {
     const fetchTrendingSongs = async () => {
       try {
         const trackPromises = trendingSongs.map(async (title) => {
-          const details = await getVideoDetails(title);
-          return { id: details.videoId, title: details.title, artist: details.artist };
+          try {
+            const searchResults = await getVideosByCategory(title, "music"); // Assuming this function fetches by title
+            if (searchResults.length === 0) throw new Error(`No video found for ${title}`);
+            
+            const videoId = searchResults[0].videoId;
+            const details = await getVideoDetails(videoId);
+            
+            return { id: details.videoId, title: details.title, artist: details.artist };
+          } catch (error) {
+            console.error(`Error fetching video for ${title}:`, error);
+            return null;
+          }
         });
         const tracks = await Promise.all(trackPromises);
         setLocalTrending(tracks);
