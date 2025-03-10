@@ -88,7 +88,7 @@ const TrackList: React.FC<TrackListProps> = ({
               <div className="text-xs text-gray-400">{index + 1}</div>
             </div>
 
-            <div className="col-span-9 sm:col-span-10 flex items-center min-w-0">
+            <div className="col-span-9 sm:col-span-7 flex items-center min-w-0">
               <img
                 src={track.thumbnail || "/placeholder.svg"}
                 alt={track.title}
@@ -107,6 +107,23 @@ const TrackList: React.FC<TrackListProps> = ({
                 {formatDuration(track.duration)}
               </div>
             )}
+
+            {/* Action buttons - Hidden on mobile, shown on larger screens */}
+            <div className="hidden sm:flex col-span-2 items-center justify-end space-x-2">
+              <button
+                className={`transition-opacity ${isTrackLiked(track) ? "text-green-500" : "text-gray-400 hover:text-white"}`}
+                onClick={(e) => handleLikeClick(track, e)}
+                aria-label={isTrackLiked(track) ? "Unlike" : "Like"}
+              >
+                <Heart size={14} fill={isTrackLiked(track) ? "currentColor" : "none"} />
+              </button>
+              <button
+                className="text-gray-400 hover:text-white"
+                aria-label="More options"
+              >
+                <MoreHorizontal size={16} />
+              </button>
+            </div>
           </div>
         ))}
       </div>
