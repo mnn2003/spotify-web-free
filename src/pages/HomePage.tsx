@@ -1,25 +1,22 @@
 import React, { useEffect, useState } from 'react';
-import { getPopularMusicVideos, searchVideos, getVideoDetails } from '../api/youtube';
+import { getPopularMusicVideos, getVideosByCategory, getVideoDetails } from '../api/youtube';
 import { SearchResult, Track } from '../types';
 import TrackCard from '../components/TrackCard';
+import CategoryCard from '../components/CategoryCard';
 import { useAuthStore } from '../store/authStore';
 
 const HomePage: React.FC = () => {
   const [popularTracks, setPopularTracks] = useState<Track[]>([]);
-  const [localTrending, setLocalTrending] = useState<Track[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { user } = useAuthStore();
 
-  const trendingSongs = [
-    "Kaun Tujhe", "Ishq", "Die With A Smile", "Sahiba", "Tu Hain Toh Main Hoon",
-    "MANIAC - Bonus Track", "Apna Bana Le", "Sajni", "Millionaire", "Tujhe Kitna Chahne Lage",
-    "Aaj Ki Raat", "Wavy", "Fell For You", "Tum Se", "Satranga", "Victory Anthem",
-    "Chuttamalle", "Bewajah", "Ye Tune Kya Kiya", "Humdard", "Tainu Khabar Nahi",
-    "Sang Rahiyo", "Husn", "Ajab Si", "Uyi Amma", "Agar Tum Saath Ho", "Bulleya",
-    "Tera Fitoor", "Jaane Tu", "Kesariya", "Sunn Raha Hai", "Guzarish", "Naina",
-    "Bujji Thalli", "O Saathi", "Mere Sohneya", "Ishq Mein", "Russian Bandana",
-    "Paththavaikkum", "Maiyya", "Payal", "Jaana Samjho Na", "blue", "Aayi Nai",
-    "Tujhe Kitna Chahne Lage", "Sajni"
+  const categories = [
+    { id: 'pop', name: 'Pop', color: '#1DB954', image: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=200&q=80' },
+    { id: 'rock', name: 'Rock', color: '#E91E63', image: 'https://images.unsplash.com/photo-1498038432885-c6f3f1b912ee?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=200&q=80' },
+    { id: 'hiphop', name: 'Hip Hop', color: '#FF9800', image: 'https://images.unsplash.com/photo-1547355253-ff0740f6e8c1?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=200&q=80' },
+    { id: 'electronic', name: 'Electronic', color: '#9C27B0', image: 'https://images.unsplash.com/photo-1571330735066-03aaa9429d89?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=200&q=80' },
+    { id: 'jazz', name: 'Jazz', color: '#3F51B5', image: 'https://images.unsplash.com/photo-1511192336575-5a79af67a629?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=200&q=80' },
+    { id: 'classical', name: 'Classical', color: '#795548', image: 'https://images.unsplash.com/photo-1507838153414-b4b713384a76?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=200&q=80' },
   ];
 
   useEffect(() => {
@@ -37,38 +34,7 @@ const HomePage: React.FC = () => {
       }
     };
 
-    const fetchTrendingSongs = async () => {
-      try {
-        const trackPromises = trendingSongs.map(async (title) => {
-          try {
-            const searchResults = await searchVideos(title, 1);
-            if (searchResults.length === 0) throw new Error(`No video found for ${title}`);
-
-            const videoId = searchResults[0].videoId;
-            const details = await getVideoDetails(videoId);
-
-            return {
-              id: details.videoId,
-              title: details.title,
-              artist: details.artist,
-              thumbnail: details.thumbnail,
-              duration: details.duration
-            };
-          } catch (error) {
-            console.error(`Error fetching video for ${title}:`, error);
-            return null;
-          }
-        });
-        
-        const tracks = (await Promise.all(trackPromises)).filter(track => track !== null);
-        setLocalTrending(tracks);
-      } catch (error) {
-        console.error('Error fetching trending songs:', error);
-      }
-    };
-
     fetchPopularTracks();
-    fetchTrendingSongs();
   }, []);
 
   const getTimeOfDay = () => {
@@ -88,10 +54,16 @@ const HomePage: React.FC = () => {
       </div>
 
       <section className="mb-8">
-        <h2 className="text-2xl font-bold text-white mb-4">Local Trending</h2>
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-          {localTrending.map((track, index) => (
-            <TrackCard key={index} track={track} />
+        <h2 className="text-2xl font-bold text-white mb-4">Browse Categories</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+          {categories.map(category => (
+            <CategoryCard
+              key={category.id}
+              id={category.id}
+              name={category.name}
+              color={category.color}
+              image={category.image}
+            />
           ))}
         </div>
       </section>
